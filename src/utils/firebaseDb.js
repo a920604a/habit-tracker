@@ -66,3 +66,28 @@ export async function deleteHabit(id) {
     const docRef = doc(habitsCollection, id);
     await deleteDoc(docRef);
 }
+
+
+
+// 取得提醒時間設定
+export async function getReminderSettings(userId) {
+    const docRef = doc(db, 'reminderSettings', userId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+        return docSnap.data().reminderTimes || [];
+    } else {
+        return [];
+    }
+}
+
+// 儲存提醒時間設定（新增或更新）
+export async function saveReminderSettings(userId, reminderTimes) {
+    const docRef = doc(db, 'reminderSettings', userId);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+        await updateDoc(docRef, { reminderTimes });
+    } else {
+        await setDoc(docRef, { reminderTimes });
+    }
+}
