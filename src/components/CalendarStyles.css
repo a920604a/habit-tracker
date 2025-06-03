@@ -31,3 +31,17 @@
   border-radius: 8px;
   font-weight: bold;
 }
+
+/* CalendarStyles.css */
+.dots-wrapper {
+  position: relative;
+  height: 12px;
+  margin-top: 2px;
+}
+
+.habit-dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}

@@ -9,7 +9,7 @@ import HabitForm from '../components/HabitForm';
 import HabitList from '../components/HabitList';
 import CalendarView from '../components/CalendarView';
 import DailyCheckinList from '../components/DailyCheckinList';
-
+import { colorPalette } from '../utils/colorUtils'; // 確保你有 export colorPalette
 import {
   getHabits,
   addHabit,
@@ -23,10 +23,11 @@ function Dashboard() {
   const [habits, setHabits] = useState([]);
   const [newHabit, setNewHabit] = useState('');
   const [selectedHabitId, setSelectedHabitId] = useState(null);
-  const [markedDates, setMarkedDates] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loadingUser, setLoadingUser] = useState(true);
+  const [selectedColor, setSelectedColor] = useState('#3182CE'); // 預設藍色
+
 
   const formatDateLocal = (date) => {
     const y = date.getFullYear();
@@ -68,18 +69,7 @@ function Dashboard() {
       .finally(() => setLoading(false));
   }, [userId]);
 
-  // 更新打卡日曆標記
-  useEffect(() => {
-    if (!selectedHabitId) {
-      setMarkedDates([]);
-      return;
-    }
-    const habit = habits.find((h) => h.id === selectedHabitId);
-    if (habit) {
-      const dates = habit.records.map((dateStr) => new Date(dateStr));
-      setMarkedDates(dates);
-    }
-  }, [selectedHabitId, habits]);
+
 
   const addNewHabit = async () => {
     if (!newHabit.trim() || !userId) return;
@@ -89,6 +79,7 @@ function Dashboard() {
         userId,
         name: newHabit.trim(),
         records: [],
+        color: selectedColor, // ✅ 使用使用者選的顏色
       };
       const id = await addHabit(habitData);
       const updated = [...habits, { id, ...habitData }];
@@ -161,6 +152,8 @@ function Dashboard() {
       <HabitForm
         newHabit={newHabit}
         setNewHabit={setNewHabit}
+        selectedColor={selectedColor}
+        setSelectedColor={setSelectedColor}
         onAdd={addNewHabit}
         loading={loading}
       />
@@ -195,7 +188,7 @@ function Dashboard() {
       />
 
       <CalendarView
-        markedDates={markedDates}
+        habits={habits}   
         onDateClick={setSelectedDate}
         selectedDate={selectedDate}
       />
