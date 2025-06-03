@@ -10,6 +10,9 @@ import HabitForm from '../components/HabitForm';
 import HabitList from '../components/HabitList';
 import CalendarView from '../components/CalendarView';
 import DailyCheckinList from '../components/DailyCheckinList';
+import AchievementBadge from '../components/AchievementBadge';
+import { checkConsecutiveDays, checkWeeklyCount } from '../utils/achievementUtils'; // 假設你有這些工具函數
+
 import {
   getHabits,
   addHabit,
@@ -28,6 +31,65 @@ function Dashboard() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loadingUser, setLoadingUser] = useState(true);
   const [selectedColor, setSelectedColor] = useState('#3182CE'); // 預設藍色
+
+  const [achievement, setAchievement] = useState(null);
+  const [showBadge, setShowBadge] = useState(false);
+
+  
+  const evaluateAchievements = (habit) => {
+    const count = habit.records.length;
+
+    
+    console.log(`打卡次數: ${count}`);
+
+  
+
+    // 🎖️ 連續 X 天打卡徽章
+    if (checkConsecutiveDays(habit.records, 14)) {
+      setAchievement('連續 14 天打卡！你真的太猛了！🏅');
+      setShowBadge(true);
+      return;
+    } else if (checkConsecutiveDays(habit.records, 7)) {
+      setAchievement('連續 7 天打卡達成一週不間斷！🎯');
+      setShowBadge(true);
+      return;
+    } else if (checkConsecutiveDays(habit.records, 5)) {
+      setAchievement('連續 5 天打卡成功！連續力就是你的超能力 💪');
+      setShowBadge(true);
+      return;
+    }
+
+    // 🎖️ 一週內打卡 X 次徽章
+    if (checkWeeklyCount(habit.records, 14)) {
+      setAchievement('一週內打卡 14 次！太強了吧，有在睡覺嗎？😆');
+      setShowBadge(true);
+      return;
+    } else if (checkWeeklyCount(habit.records, 7)) {
+      setAchievement('一週內完成 7 次打卡！你是時間管理大師！⏰');
+      setShowBadge(true);
+      return;
+    } else if (checkWeeklyCount(habit.records, 5)) {
+      setAchievement('一週內完成 5 次打卡！持續前進中 🚀');
+      setShowBadge(true);
+      return;
+    }
+
+      // 🎖️ 累積打卡次數徽章
+    if (count >= 1 && count < 25) {
+      setAchievement('你已完成 1 次打卡，持之以恆是成功的開始！');
+      setShowBadge(true);
+      return;
+    } else if (count >= 25 && count < 50) {
+      setAchievement('你已完成 25 次打卡！目標近在咫尺，繼續努力！');
+      setShowBadge(true);
+      return;
+    } else if (count >= 50) {
+      setAchievement('50 次打卡達成！你是習慣養成大師！🏆');
+      setShowBadge(true);
+      return;
+    }
+  };
+
 
 
   const formatDateLocal = (date) => {
@@ -94,30 +156,38 @@ function Dashboard() {
   };
 
   const checkIn = async (habitId, dateStr) => {
-    if (!userId) return;
-    setLoading(true);
-    try {
-      const habit = habits.find(h => h.id === habitId);
-      if (!habit) throw new Error('找不到該習慣');
+  if (!userId) return;
+  setLoading(true);
+  try {
+    const habit = habits.find(h => h.id === habitId);
+    if (!habit) throw new Error('找不到該習慣');
 
-      let updatedRecords = habit.records ? [...habit.records] : [];
+    let updatedRecords = habit.records ? [...habit.records] : [];
 
-      if (!updatedRecords.includes(dateStr)) {
-        updatedRecords.push(dateStr);
-      }
-
-      await updateHabit(habitId, { records: updatedRecords });
-
-      const updatedHabits = habits.map(h =>
-        h.id === habitId ? { ...h, records: updatedRecords } : h
-      );
-      setHabits(updatedHabits);
-    } catch (error) {
-      console.error('打卡失敗:', error);
-      alert('打卡失敗，請稍後再試');
+    if (!updatedRecords.includes(dateStr)) {
+      updatedRecords.push(dateStr);
     }
-    setLoading(false);
-  };
+
+    await updateHabit(habitId, { records: updatedRecords });
+
+    // 更新該 habit 物件
+    const updatedHabit = { ...habit, records: updatedRecords };
+
+    const updatedHabits = habits.map(h =>
+      h.id === habitId ? { ...h, records: updatedRecords } : h
+    );
+    setHabits(updatedHabits);
+
+    // ✅ 檢查成就
+    evaluateAchievements(updatedHabit);
+
+  } catch (error) {
+    console.error('打卡失敗:', error);
+    alert('打卡失敗，請稍後再試');
+  }
+  setLoading(false);
+};
+
 
   const removeCheckIn = async (habitId, dateStr) => {
     if (!userId) return;
@@ -187,7 +257,12 @@ function Dashboard() {
         }}
         loading={loading}
       />
-
+      <AchievementBadge
+        isOpen={showBadge}
+        onClose={() => setShowBadge(false)}
+        achievement={achievement}
+      />
+      
       <CalendarView
         habits={habits}   
         onDateClick={setSelectedDate}
@@ -201,6 +276,8 @@ function Dashboard() {
         onRemoveCheckIn={removeCheckIn}
         loading={loading}
       />
+      
+
     </Box>
   );
 }
