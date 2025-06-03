@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Button, Heading, Text } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
+import { useAuth } from '../contexts/AuthContext'; // 假設你有這個 hook
 
 import { auth } from '../utils/firebase'; // 確保你有 export auth
 import ReminderSettings from '../components/ReminderSettings';
@@ -17,6 +18,7 @@ import {
 
 function Dashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();  // 從 context 拿 user
 
   const [userId, setUserId] = useState(null);
   const [habits, setHabits] = useState([]);
@@ -54,7 +56,7 @@ function Dashboard() {
     });
 
     return () => unsubscribe();
-  }, [navigate]);
+  }, [user, navigate]);
 
   // 取得使用者的習慣資料
   useEffect(() => {

@@ -13,7 +13,8 @@ import {
 } from '@chakra-ui/react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { getCurrentUserId, getHabits } from '../utils/firebaseDb';
+import { useAuth } from '../contexts/AuthContext';  // 剛才建立的 Context
+import { getHabits } from '../utils/firebaseDb';
 import HabitBarChart from '../components/Statistics/HabitBarChart';
 import PopularHabitsChart from '../components/Statistics/PopularHabitsChart';
 import TrendLineChart from '../components/Statistics/TrendLineChart';
@@ -22,6 +23,7 @@ import { exportHabitsToCSV, exportHabitsToPDF } from '../utils/exportUtils';
 
 export default function StatisticsPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [habits, setHabits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [chartType, setChartType] = useState('bar');
@@ -31,14 +33,13 @@ export default function StatisticsPage() {
   const toast = useToast();
 
   useEffect(() => {
+    if (!user) {
+      navigate('/login');  // 如果沒登入，強制跳登入頁
+      return;
+    }
     async function fetchHabits() {
-      const userId = getCurrentUserId();
-      if (!userId) {
-        navigate('/');
-        return;
-      }
       try {
-        const data = await getHabits(userId);
+        const data = await getHabits(user.uid);
         setHabits(data);
       } catch (error) {
         console.error('抓取習慣資料失敗', error);
@@ -47,7 +48,7 @@ export default function StatisticsPage() {
       }
     }
     fetchHabits();
-  }, [navigate]);
+  }, [user, navigate]);
 
   const now = new Date();
   const filteredHabits = habits.map(h => {
@@ -79,7 +80,7 @@ export default function StatisticsPage() {
 
   const exportPDF = async () => {
     try {
-      await exportHabitsToPDF(filteredHabits, rangeText);
+      await exportHabitsToPDF(filteredHabits, rangeText, user.displayName || 'Anonymous');
       toast({ title: 'PDF 匯出成功', status: 'success', duration: 2000 });
     } catch (error) {
       toast({ title: 'PDF 匯出失敗', status: 'error', duration: 3000 });
