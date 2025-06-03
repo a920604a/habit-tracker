@@ -9,7 +9,6 @@ import HabitForm from '../components/HabitForm';
 import HabitList from '../components/HabitList';
 import CalendarView from '../components/CalendarView';
 import DailyCheckinList from '../components/DailyCheckinList';
-import { colorPalette } from '../utils/colorUtils'; // 確保你有 export colorPalette
 import {
   getHabits,
   addHabit,
