@@ -6,6 +6,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import LoginPage from './pages/LoginPage';
 import Dashboard from './pages/Dashboard';
 import StatisticsPage from './pages/StatisticsPage';  // 你的統計頁元件路徑
+import { ToastContainer } from "react-toastify";
 
 function App() {
   return (
@@ -16,6 +17,8 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/statistics" element={<StatisticsPage />} />
       </Routes>
+
+      <ToastContainer />
     </AuthProvider>
     </Router>
   );
