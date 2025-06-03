@@ -2,40 +2,41 @@
 import React from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
-import { Box } from '@chakra-ui/react';
+import './CalendarStyles.css'; // 自訂樣式
 
-const CalendarView = ({ markedDates, onDateClick, selectedDate }) => {
-  const tileClassName = ({ date, view }) => {
-    if (view === 'month') {
-      const isMarked = markedDates.find(d => d.toDateString() === date.toDateString());
-      if (isMarked) return 'highlight';
-      if (selectedDate && selectedDate.toDateString() === date.toDateString()) {
-        return 'selected';
-      }
-    }
-    return null;
-  };
+function CalendarView({ markedDates = [], selectedDate, onDateClick }) {
+  const isSameDay = (d1, d2) =>
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate();
 
-  const onClickDay = (date) => {
-    if (onDateClick) onDateClick(date);
-  };
+  const today = new Date();
 
   return (
-    <Box border="1px solid #ccc" borderRadius="md" overflow="hidden" boxShadow="sm">
-      <Calendar tileClassName={tileClassName} onClickDay={onClickDay} />
-      <style>{`
-        .highlight {
-          background: #38a169 !important;
-          color: white !important;
-          border-radius: 50% !important;
+    <Calendar
+      onClickDay={onDateClick}
+      value={selectedDate}
+      tileClassName={({ date, view }) => {
+        if (view !== 'month') return null;
+
+        const classes = [];
+
+        if (isSameDay(date, today)) {
+          classes.push('today');
         }
-        .selected {
-          border: 2px solid #3182ce !important;
-          border-radius: 50% !important;
+
+        if (isSameDay(date, selectedDate)) {
+          classes.push('selected-day');
         }
-      `}</style>
-    </Box>
+
+        if (markedDates.some((d) => isSameDay(date, d))) {
+          classes.push('marked');
+        }
+
+        return classes.join(' ');
+      }}
+    />
   );
-};
+}
 
 export default CalendarView;

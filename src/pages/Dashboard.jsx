@@ -1,8 +1,9 @@
-// pages/Dashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { Box, Button, Heading, Text } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
+import { onAuthStateChanged } from 'firebase/auth';
 
+import { auth } from '../utils/firebase'; // 確保你有 export auth
 import ReminderSettings from '../components/ReminderSettings';
 import HabitForm from '../components/HabitForm';
 import HabitList from '../components/HabitList';
@@ -13,13 +14,12 @@ import {
   getHabits,
   addHabit,
   updateHabit,
-  getCurrentUserId,
 } from '../utils/firebaseDb';
 
 function Dashboard() {
   const navigate = useNavigate();
-  const userId = getCurrentUserId();
 
+  const [userId, setUserId] = useState(null);
   const [habits, setHabits] = useState([]);
   const [newHabit, setNewHabit] = useState('');
   const [selectedHabitId, setSelectedHabitId] = useState(null);
@@ -28,7 +28,6 @@ function Dashboard() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loadingUser, setLoadingUser] = useState(true);
 
-  // 日期格式化
   const formatDateLocal = (date) => {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -36,30 +35,37 @@ function Dashboard() {
     return `${y}-${m}-${d}`;
   };
 
-  // 判斷是否為未來日期
   const isFutureDate = (date) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return date > today;
   };
 
-  // 取得習慣資料
+  // 🔒 監聽 Firebase 登入狀態
   useEffect(() => {
-    if (!userId) {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUserId(user.uid);
+      } else {
+        setUserId(null);
+        navigate("/");
+      }
       setLoadingUser(false);
-      navigate("/");
-      return;
-    }
+    });
+
+    return () => unsubscribe();
+  }, [navigate]);
+
+  // 取得使用者的習慣資料
+  useEffect(() => {
+    if (!userId) return;
     setLoading(true);
     getHabits(userId)
       .then((data) => {
         setHabits(data);
         if (data.length > 0) setSelectedHabitId(data[0].id);
       })
-      .finally(() => {
-        setLoading(false);
-        setLoadingUser(false);
-      });
+      .finally(() => setLoading(false));
   }, [userId]);
 
   // 更新打卡日曆標記
