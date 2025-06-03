@@ -6,22 +6,29 @@ import {
   Heading,
   Text,
   Select,
-  VStack
+  VStack,
+  HStack,
+  Box,
+  useToast
 } from '@chakra-ui/react';
-
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { getCurrentUserId, getHabits } from '../utils/firebaseDb';
-
 import HabitBarChart from '../components/Statistics/HabitBarChart';
 import PopularHabitsChart from '../components/Statistics/PopularHabitsChart';
 import TrendLineChart from '../components/Statistics/TrendLineChart';
 import HeatmapChart from '../components/Statistics/HeatmapChart';
+import { exportHabitsToCSV, exportHabitsToPDF } from '../utils/exportUtils';
 
 export default function StatisticsPage() {
   const navigate = useNavigate();
   const [habits, setHabits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [chartType, setChartType] = useState('bar');
-  const [dateRange, setDateRange] = useState('30'); // 預設最近 30 天
+  const [dateRange, setDateRange] = useState('30');
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+  const toast = useToast();
 
   useEffect(() => {
     async function fetchHabits() {
@@ -30,7 +37,6 @@ export default function StatisticsPage() {
         navigate('/');
         return;
       }
-
       try {
         const data = await getHabits(userId);
         setHabits(data);
@@ -40,20 +46,46 @@ export default function StatisticsPage() {
         setLoading(false);
       }
     }
-
     fetchHabits();
   }, [navigate]);
 
   const now = new Date();
-  const filteredHabits = habits.map(h => ({
-    ...h,
-    records: h.records?.filter(dateStr => {
-      if (dateRange === 'all') return true;
+  const filteredHabits = habits.map(h => {
+    const records = h.records || [];
+    const filteredRecords = records.filter(dateStr => {
       const d = new Date(dateStr);
+      if (startDate && endDate) return d >= startDate && d <= endDate;
+      if (dateRange === 'all') return true;
       const diffDays = (now - d) / (1000 * 60 * 60 * 24);
       return diffDays <= parseInt(dateRange, 10);
-    }) || [],
-  }));
+    });
+    return { ...h, records: filteredRecords };
+  });
+
+  const getDisplayRangeLabel = () => {
+    if (startDate && endDate) {
+      return `自訂範圍：${startDate.toLocaleDateString()} ～ ${endDate.toLocaleDateString()}`;
+    }
+    if (dateRange === 'all') return '目前顯示：全部資料';
+    return `目前顯示：最近 ${dateRange} 天統計`;
+  };
+
+  const rangeText = getDisplayRangeLabel();
+
+  const exportCSV = () => {
+    exportHabitsToCSV(filteredHabits, rangeText);
+    toast({ title: 'CSV 匯出成功', status: 'success', duration: 2000 });
+  };
+
+  const exportPDF = async () => {
+    try {
+      await exportHabitsToPDF(filteredHabits, rangeText);
+      toast({ title: 'PDF 匯出成功', status: 'success', duration: 2000 });
+    } catch (error) {
+      toast({ title: 'PDF 匯出失敗', status: 'error', duration: 3000 });
+      console.error(error);
+    }
+  };
 
   if (loading) {
     return (
@@ -77,27 +109,48 @@ export default function StatisticsPage() {
         返回儀表板
       </Button>
 
-      <Heading mb={4}>習慣打卡統計</Heading>
+      <Heading mb={2}>習慣打卡統計</Heading>
+      <Text mb={4} fontWeight="bold">{rangeText}</Text>
 
       <VStack align="stretch" spacing={4}>
-        {/* 日期篩選器 */}
-        <Select value={dateRange} onChange={e => setDateRange(e.target.value)}>
-          <option value="7">最近 7 天</option>
-          <option value="30">最近 30 天</option>
-          <option value="90">最近 90 天</option>
-          <option value="all">全部資料</option>
-        </Select>
-
-        {/* 圖表選擇器 */}
         <Select value={chartType} onChange={e => setChartType(e.target.value)}>
           <option value="bar">打卡次數長條圖</option>
           <option value="popular">熱門習慣統計</option>
           <option value="trend">累積打卡趨勢圖</option>
           <option value="heatmap">打卡熱力圖</option>
         </Select>
+
+        <HStack>
+          <Select value={dateRange} onChange={e => setDateRange(e.target.value)}>
+            <option value="7">最近 7 天</option>
+            <option value="30">最近 30 天</option>
+            <option value="90">最近 90 天</option>
+            <option value="all">全部資料</option>
+          </Select>
+          <Box>
+            <DatePicker
+              selected={startDate}
+              onChange={date => setStartDate(date)}
+              placeholderText="起始日期"
+              dateFormat="yyyy-MM-dd"
+              isClearable
+            />
+            <DatePicker
+              selected={endDate}
+              onChange={date => setEndDate(date)}
+              placeholderText="結束日期"
+              dateFormat="yyyy-MM-dd"
+              isClearable
+            />
+          </Box>
+        </HStack>
+
+        <HStack spacing={4}>
+          <Button colorScheme="green" onClick={exportCSV}>匯出 CSV</Button>
+          <Button colorScheme="purple" onClick={exportPDF}>匯出 PDF</Button>
+        </HStack>
       </VStack>
 
-      {/* 圖表顯示 */}
       <div style={{ marginTop: '1rem' }}>
         {chartType === 'bar' && <HabitBarChart habits={filteredHabits} />}
         {chartType === 'popular' && <PopularHabitsChart habits={filteredHabits} />}
