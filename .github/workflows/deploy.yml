@@ -3,29 +3,41 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
-      - main # 或你使用的主要分支
+      - main  # 監聽 main 分支推送事件，可依實際分支調整
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      # 1. 取出原始碼
+      - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2. 安裝 Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
+      # 3. 安裝相依套件
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
+      # 4. 建置 React 專案
       - name: Build project
         run: npm run build
 
+      # 5. 部署到 GitHub Pages（gh-pages 分支）
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build
+          publish_dir: ./build  # React 建置輸出資料夾，預設是 build
+          # 可選參數，設定用戶名稱、信箱，利於日誌清楚
+          commit_user_name: github-actions[bot]
+          commit_user_email: github-actions[bot]@users.noreply.github.com
+
+      # 6. (可選) 確認部署完成日誌
+      - name: Show deployment status
+        run: echo "Deployment to GitHub Pages completed."
