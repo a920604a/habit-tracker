@@ -26,7 +26,7 @@ export default function StatisticsPage() {
   const { user } = useAuth();
   const [habits, setHabits] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [chartType, setChartType] = useState('bar');
+  const [chartType, setChartType] = useState('heatmap');
   const [dateRange, setDateRange] = useState('30');
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);

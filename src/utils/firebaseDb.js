@@ -67,7 +67,7 @@ export async function deleteHabit(id) {
     await deleteDoc(docRef);
 }
 
-
+// ReminderSettings
 
 // 取得提醒時間設定
 export async function getReminderSettings(userId) {

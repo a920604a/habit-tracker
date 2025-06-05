@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 function formatDate(dateStr) {
   const d = new Date(dateStr);
@@ -6,37 +6,89 @@ function formatDate(dateStr) {
 }
 
 export default function HeatmapChart({ habits }) {
+  const [sizeConfig, setSizeConfig] = useState({
+    cellSize: 16,
+    gap: 2,
+    fontSize: 10,
+    habitNameFontSize: 12,
+    padding: '4px',
+  });
+
+  useEffect(() => {
+    function updateSize() {
+      const width = window.innerWidth;
+
+      if (width < 480) {
+        // 手機
+        setSizeConfig({
+          cellSize: 12,
+          gap: 1,
+          fontSize: 8,
+          habitNameFontSize: 10,
+          padding: '2px',
+        });
+      } else if (width < 768) {
+        // 平板
+        setSizeConfig({
+          cellSize: 14,
+          gap: 2,
+          fontSize: 9,
+          habitNameFontSize: 11,
+          padding: '3px',
+        });
+      } else {
+        // 桌機
+        setSizeConfig({
+          cellSize: 16,
+          gap: 2,
+          fontSize: 10,
+          habitNameFontSize: 12,
+          padding: '4px',
+        });
+      }
+    }
+
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
+
   if (!habits.length) return <div>無資料顯示</div>;
 
-  // 取出所有日期 (排序)
-  const allDatesSet = new Set();
-  habits.forEach(h => h.records?.forEach(date => allDatesSet.add(date)));
-  const allDates = Array.from(allDatesSet).sort((a, b) => new Date(a) - new Date(b));
+  // 產生最近 30 天日期陣列
+  const today = new Date();
+  const allDates = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    allDates.push(d.toISOString().split('T')[0]);
+  }
 
-  // 產生一個物件快速查詢是否有打卡 habit.records 用 Set
   const habitsRecordsSet = habits.map(habit => new Set(habit.records));
 
   return (
     <div>
-      <h3 style={{ textAlign: 'center' }}>多習慣每日打卡熱力圖</h3>
+      <h3 style={{ textAlign: 'center' }}>多習慣每日打卡熱力圖（最近30天）</h3>
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: `120px repeat(${allDates.length}, 24px)`,
-          gap: '4px',
+          gridTemplateColumns: `120px repeat(${allDates.length}, ${sizeConfig.cellSize}px)`,
+          gap: `${sizeConfig.gap}px`,
           overflowX: 'auto',
-          padding: '8px',
+          padding: sizeConfig.padding,
           border: '1px solid #ccc',
           borderRadius: '8px',
           userSelect: 'none',
         }}
       >
         {/* 第一列: 空格 + 日期標題 */}
-        <div style={{ fontWeight: 'bold', padding: '4px 8px' }}>習慣 / 日期</div>
+        <div style={{ fontWeight: 'bold', padding: `4px 8px`, fontSize: sizeConfig.habitNameFontSize }}>
+          習慣 / 日期
+        </div>
         {allDates.map(date => (
           <div
             key={date}
-            style={{ fontSize: '12px', textAlign: 'center', padding: '4px 0' }}
+            style={{ fontSize: sizeConfig.fontSize, textAlign: 'center', padding: '2px 0' }}
             title={date}
           >
             {formatDate(date)}
@@ -50,10 +102,11 @@ export default function HeatmapChart({ habits }) {
             <div
               style={{
                 fontWeight: 'bold',
-                padding: '4px 8px',
+                padding: `4px 8px`,
                 backgroundColor: habit.color || '#ddd',
                 color: '#222',
                 borderRadius: '4px',
+                fontSize: sizeConfig.habitNameFontSize,
               }}
               title={habit.name}
             >
@@ -68,9 +121,9 @@ export default function HeatmapChart({ habits }) {
                   key={`${habit.name}-${date}`}
                   title={hasRecord ? `${habit.name} 有打卡` : ''}
                   style={{
-                    width: '20px',
-                    height: '20px',
-                    borderRadius: '4px',
+                    width: sizeConfig.cellSize,
+                    height: sizeConfig.cellSize,
+                    borderRadius: 3,
                     backgroundColor: hasRecord ? habit.color || '#4caf50' : '#eee',
                     border: '1px solid #ccc',
                     transition: 'background-color 0.3s',
