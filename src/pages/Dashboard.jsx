@@ -32,7 +32,9 @@ function Dashboard() {
     removeCheckIn,
     showBadge,
     setShowBadge,
-    achievement
+    achievement,
+    handleCheckIn,
+    handleHabitDeleted
   } = useDashboard();
 
   if (loadingUser) return <Text>載入中...</Text>;
@@ -65,28 +67,9 @@ function Dashboard() {
         isCheckedIn={(habit) =>
           habit.records.includes(formatDateLocal(selectedDate))
         }
-        onCheckIn={(habitId) => {
-          if (isFutureDate(selectedDate)) {
-            alert('無法對未來日期打卡');
-            return;
-          }
-
-          const habit = habits.find(h => h.id === habitId);
-          const dateStr = formatDateLocal(selectedDate);
-
-          if (habit?.records.includes(dateStr)) {
-            alert('該日期已打卡，無法重複打卡');
-            return;
-          }
-
-          checkIn(habitId, dateStr);
-        }}
+        onCheckIn={handleCheckIn}
         loading={loading}
-        onHabitDeleted={(deletedId) => {
-          const newHabits = habits.filter(h => h.id !== deletedId);
-          setHabits(newHabits); // << 加這行，更新習慣列表狀態
-          setSelectedHabitId(newHabits.length > 0 ? newHabits[0].id : null);
-        }}
+        onHabitDeleted={handleHabitDeleted}
       />
 
       <AchievementBadge

@@ -5,7 +5,8 @@ import { useAuth } from '../contexts/AuthContext';
 import {
     getHabits,
     addHabit,
-    updateHabit
+    updateHabit,
+    deleteHabit // 假設你有刪除習慣的 API
 } from '../utils/firebaseDb';
 import { auth } from '../utils/firebase';
 import {
@@ -141,6 +142,42 @@ export function useDashboard() {
         setLoading(false);
     };
 
+    // 新增 handleCheckIn：整合前面 checkIn 與邏輯判斷
+    const handleCheckIn = (habitId) => {
+        if (isFutureDate(selectedDate)) {
+            alert('無法對未來日期打卡');
+            return;
+        }
+
+        const habit = habits.find(h => h.id === habitId);
+        const dateStr = formatDateLocal(selectedDate);
+
+        if (habit?.records.includes(dateStr)) {
+            alert('該日期已打卡，無法重複打卡');
+            return;
+        }
+
+        checkIn(habitId, dateStr);
+    };
+
+    // 新增 handleHabitDeleted，並操作 Firebase
+    const handleHabitDeleted = async (deletedId) => {
+        if (!userId) return;
+        setLoading(true);
+        try {
+            // 假設你有刪除習慣的 api
+            await deleteHabit(deletedId);
+
+            const newHabits = habits.filter(h => h.id !== deletedId);
+            setHabits(newHabits);
+            setSelectedHabitId(newHabits.length > 0 ? newHabits[0].id : null);
+        } catch (error) {
+            console.error('刪除習慣失敗:', error);
+            alert('刪除失敗，請稍後再試');
+        }
+        setLoading(false);
+    };
+
     // 登入狀態監聽
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -187,6 +224,8 @@ export function useDashboard() {
         removeCheckIn,
         showBadge,
         setShowBadge,
-        achievement
+        achievement,
+        handleCheckIn,
+        handleHabitDeleted
     };
 }
