@@ -256,7 +256,11 @@ function Dashboard() {
           checkIn(habitId, dateStr);
         }}
         loading={loading}
-      />
+        onHabitDeleted={(deletedId) => {
+          setHabits(habits.filter(h => h.id !== deletedId)); // 更新 UI
+        }}
+/>
+
       <AchievementBadge
         isOpen={showBadge}
         onClose={() => setShowBadge(false)}
