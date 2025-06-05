@@ -1,4 +1,6 @@
 import React, { useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
 import {
   Box,
   Button,
@@ -34,6 +36,8 @@ function HabitList({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const cancelRef = useRef();
   const [habitToDelete, setHabitToDelete] = useState(null);
+  const navigate = useNavigate();
+
 
   const openDeleteDialog = (habit) => {
     setHabitToDelete(habit);
@@ -85,7 +89,9 @@ function HabitList({
             <HStack mt={2} spacing={2}>
               <Button
                 size="xs"
-                onClick={() => setSelectedHabitId(habit.id)}
+                // onClick={() => setSelectedHabitId(habit.id)}
+                onClick={() => navigate(`/calendar/${habit.id}`)}
+
                 colorScheme="blue"
                 variant="outline"
               >
